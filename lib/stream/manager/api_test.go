@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Jeffail/benthos/v3/internal/bundle/mock"
+	"github.com/Jeffail/benthos/v3/internal/component/metrics"
 	"github.com/Jeffail/benthos/v3/lib/input"
 	"github.com/Jeffail/benthos/v3/lib/log"
 	bmanager "github.com/Jeffail/benthos/v3/lib/manager"
-	"github.com/Jeffail/benthos/v3/lib/manager/mock"
 	"github.com/Jeffail/benthos/v3/lib/message"
-	"github.com/Jeffail/benthos/v3/lib/metrics"
 	"github.com/Jeffail/benthos/v3/lib/output"
 	"github.com/Jeffail/benthos/v3/lib/response"
 	"github.com/Jeffail/benthos/v3/lib/stream"
@@ -128,20 +128,14 @@ func TestTypeAPIDisabled(t *testing.T) {
 	rMgr, err := bmanager.NewV2(bmanager.NewResourceConfig(), r, log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	_ = manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(rMgr),
+	_ = manager.New(rMgr,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 		manager.OptAPIEnabled(true),
 	)
 	assert.NotEmpty(t, r.endpoints)
 
 	r = &endpointReg{endpoints: map[string]http.HandlerFunc{}}
-	_ = manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(rMgr),
+	_ = manager.New(rMgr,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 		manager.OptAPIEnabled(false),
 	)
@@ -149,10 +143,7 @@ func TestTypeAPIDisabled(t *testing.T) {
 }
 
 func TestTypeAPIBadMethods(t *testing.T) {
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(mock.NewManager()),
+	mgr := manager.New(mock.NewManager(),
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -184,10 +175,7 @@ func TestTypeAPIBasicOperations(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Second*10),
 	)
 
@@ -302,10 +290,7 @@ func TestTypeAPIPatch(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -359,10 +344,7 @@ func TestTypeAPIBasicOperationsYAML(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Second*10),
 	)
 
@@ -441,10 +423,7 @@ func TestTypeAPIList(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -481,10 +460,7 @@ func TestTypeAPISetStreams(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -558,10 +534,7 @@ func TestTypeAPIStreamsDefaultConf(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -595,10 +568,7 @@ func TestTypeAPIStreamsLinting(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -647,10 +617,7 @@ func TestTypeAPIDefaultConf(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -682,10 +649,7 @@ func TestTypeAPILinting(t *testing.T) {
 	res, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(res),
+	mgr := manager.New(res,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -787,10 +751,7 @@ func TestResourceAPILinting(t *testing.T) {
 			bmgr, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 			require.NoError(t, err)
 
-			mgr := manager.New(
-				manager.OptSetLogger(log.Noop()),
-				manager.OptSetStats(metrics.Noop()),
-				manager.OptSetManager(bmgr),
+			mgr := manager.New(bmgr,
 				manager.OptSetAPITimeout(time.Millisecond*100),
 			)
 
@@ -829,10 +790,7 @@ func TestTypeAPIGetStats(t *testing.T) {
 	mgr, err := bmanager.NewV2(bmanager.NewResourceConfig(), mock.NewManager(), log.Noop(), metrics.Noop())
 	require.NoError(t, err)
 
-	smgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(mgr),
+	smgr := manager.New(mgr,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 
@@ -861,7 +819,7 @@ func TestTypeAPIGetStats(t *testing.T) {
 	stats, err := gabs.ParseJSON(response.Body.Bytes())
 	require.NoError(t, err)
 
-	assert.Equal(t, 1.0, stats.S("input", "running").Data(), response.Body.String())
+	assert.Greater(t, len(stats.ChildrenMap()), 0, response.Body.String())
 }
 
 func TestTypeAPISetResources(t *testing.T) {
@@ -871,10 +829,7 @@ func TestTypeAPISetResources(t *testing.T) {
 	tChan := make(chan message.Transaction)
 	bmgr.SetPipe("feed_in", tChan)
 
-	mgr := manager.New(
-		manager.OptSetLogger(log.Noop()),
-		manager.OptSetStats(metrics.Noop()),
-		manager.OptSetManager(bmgr),
+	mgr := manager.New(bmgr,
 		manager.OptSetAPITimeout(time.Millisecond*100),
 	)
 

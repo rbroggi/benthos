@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Jeffail/benthos/v3/internal/bundle"
 	"github.com/Jeffail/benthos/v3/internal/docs"
 	"github.com/Jeffail/benthos/v3/lib/buffer"
 	"github.com/Jeffail/benthos/v3/lib/cache"
@@ -100,12 +99,12 @@ func (m *Type) HandleStreamsCRUD(w http.ResponseWriter, r *http.Request) {
 			r.Body.Close()
 		}
 		if serverErr != nil {
-			m.logger.Errorf("Streams CRUD Error: %v\n", serverErr)
+			m.manager.Logger().Errorf("Streams CRUD Error: %v\n", serverErr)
 			http.Error(w, fmt.Sprintf("Error: %v", serverErr), http.StatusBadGateway)
 			return
 		}
 		if requestErr != nil {
-			m.logger.Debugf("Streams request CRUD Error: %v\n", requestErr)
+			m.manager.Logger().Debugf("Streams request CRUD Error: %v\n", requestErr)
 			http.Error(w, fmt.Sprintf("Error: %v", requestErr), http.StatusBadRequest)
 			return
 		}
@@ -157,7 +156,7 @@ func (m *Type) HandleStreamsCRUD(w http.ResponseWriter, r *http.Request) {
 			for _, l := range lintStreamConfigNode(&n) {
 				keyLint := fmt.Sprintf("stream '%v': %v", k, l)
 				lints = append(lints, keyLint)
-				m.logger.Debugf("Streams request linting error: %v\n", keyLint)
+				m.manager.Logger().Debugf("Streams request linting error: %v\n", keyLint)
 			}
 		}
 		if len(lints) > 0 {
@@ -267,12 +266,12 @@ func (m *Type) HandleStreamCRUD(w http.ResponseWriter, r *http.Request) {
 			r.Body.Close()
 		}
 		if serverErr != nil {
-			m.logger.Errorf("Streams CRUD Error: %v\n", serverErr)
+			m.manager.Logger().Errorf("Streams CRUD Error: %v\n", serverErr)
 			http.Error(w, fmt.Sprintf("Error: %v", serverErr), http.StatusBadGateway)
 			return
 		}
 		if requestErr != nil {
-			m.logger.Debugf("Streams request CRUD Error: %v\n", requestErr)
+			m.manager.Logger().Debugf("Streams request CRUD Error: %v\n", requestErr)
 			http.Error(w, fmt.Sprintf("Error: %v", requestErr), http.StatusBadRequest)
 			return
 		}
@@ -298,7 +297,7 @@ func (m *Type) HandleStreamCRUD(w http.ResponseWriter, r *http.Request) {
 			}
 			lints = lintStreamConfigNode(&node)
 			for _, l := range lints {
-				m.logger.Infof("Stream '%v' config: %v\n", id, l)
+				m.manager.Logger().Infof("Stream '%v' config: %v\n", id, l)
 			}
 		}
 
@@ -436,12 +435,12 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			r.Body.Close()
 		}
 		if serverErr != nil {
-			m.logger.Errorf("Resource CRUD Error: %v\n", serverErr)
+			m.manager.Logger().Errorf("Resource CRUD Error: %v\n", serverErr)
 			http.Error(w, fmt.Sprintf("Error: %v", serverErr), http.StatusBadGateway)
 			return
 		}
 		if requestErr != nil {
-			m.logger.Debugf("Resource request CRUD Error: %v\n", requestErr)
+			m.manager.Logger().Debugf("Resource request CRUD Error: %v\n", requestErr)
 			http.Error(w, fmt.Sprintf("Error: %v", requestErr), http.StatusBadRequest)
 			return
 		}
@@ -458,12 +457,6 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newMgr, ok := m.manager.(bundle.NewManagement)
-	if !ok {
-		serverErr = errors.New("server does not support resource CRUD operations")
-		return
-	}
-
 	ctx, done := context.WithDeadline(r.Context(), time.Now().Add(m.apiTimeout))
 	defer done()
 
@@ -477,7 +470,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			if requestErr = n.Decode(&cacheConf); requestErr != nil {
 				return
 			}
-			serverErr = newMgr.StoreCache(ctx, id, cacheConf)
+			serverErr = m.manager.StoreCache(ctx, id, cacheConf)
 		}
 	case docs.TypeInput:
 		storeFn = func(n *yaml.Node) {
@@ -485,7 +478,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			if requestErr = n.Decode(&inputConf); requestErr != nil {
 				return
 			}
-			serverErr = newMgr.StoreInput(ctx, id, inputConf)
+			serverErr = m.manager.StoreInput(ctx, id, inputConf)
 		}
 	case docs.TypeOutput:
 		storeFn = func(n *yaml.Node) {
@@ -493,7 +486,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			if requestErr = n.Decode(&outputConf); requestErr != nil {
 				return
 			}
-			serverErr = newMgr.StoreOutput(ctx, id, outputConf)
+			serverErr = m.manager.StoreOutput(ctx, id, outputConf)
 		}
 	case docs.TypeProcessor:
 		storeFn = func(n *yaml.Node) {
@@ -501,7 +494,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			if requestErr = n.Decode(&procConf); requestErr != nil {
 				return
 			}
-			serverErr = newMgr.StoreProcessor(ctx, id, procConf)
+			serverErr = m.manager.StoreProcessor(ctx, id, procConf)
 		}
 	case docs.TypeRateLimit:
 		storeFn = func(n *yaml.Node) {
@@ -509,7 +502,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 			if requestErr = n.Decode(&rlConf); requestErr != nil {
 				return
 			}
-			serverErr = newMgr.StoreRateLimit(ctx, id, rlConf)
+			serverErr = m.manager.StoreRateLimit(ctx, id, rlConf)
 		}
 	default:
 		http.Error(w, "Var `type` must be set to one of `cache`, `input`, `output`, `processor` or `rate_limit`", http.StatusBadRequest)
@@ -534,7 +527,7 @@ func (m *Type) HandleResourceCRUD(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("chilled") != "true" {
 			for _, l := range docs.LintYAML(docs.NewLintContext(), docType, &node) {
 				lints = append(lints, fmt.Sprintf("line %v: %v", l.Line, l.What))
-				m.logger.Infof("Resource '%v' config: %v\n", id, l)
+				m.manager.Logger().Infof("Resource '%v' config: %v\n", id, l)
 			}
 		}
 	}
@@ -560,12 +553,12 @@ func (m *Type) HandleStreamStats(w http.ResponseWriter, r *http.Request) {
 			r.Body.Close()
 		}
 		if serverErr != nil {
-			m.logger.Errorf("Stream stats Error: %v\n", serverErr)
+			m.manager.Logger().Errorf("Stream stats Error: %v\n", serverErr)
 			http.Error(w, fmt.Sprintf("Error: %v", serverErr), http.StatusBadGateway)
 			return
 		}
 		if requestErr != nil {
-			m.logger.Debugf("Stream request stats Error: %v\n", requestErr)
+			m.manager.Logger().Debugf("Stream request stats Error: %v\n", requestErr)
 			http.Error(w, fmt.Sprintf("Error: %v", requestErr), http.StatusBadRequest)
 			return
 		}
@@ -587,11 +580,9 @@ func (m *Type) HandleStreamStats(w http.ResponseWriter, r *http.Request) {
 
 			obj := gabs.New()
 			for k, v := range counters {
-				k = strings.TrimPrefix(k, id+".")
 				obj.SetP(v, k)
 			}
 			for k, v := range timings {
-				k = strings.TrimPrefix(k, id+".")
 				obj.SetP(v, k)
 				obj.SetP(time.Duration(v).String(), k+"_readable")
 			}
@@ -630,5 +621,3 @@ func (m *Type) HandleStreamReady(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusServiceUnavailable)
 	fmt.Fprintf(w, "streams %v are not connected\n", strings.Join(notReady, ", "))
 }
-
-//------------------------------------------------------------------------------
